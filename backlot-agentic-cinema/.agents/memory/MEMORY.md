@@ -1,0 +1,6 @@
+- [OpenAPI and Zod versions](openapi-zod-versions.md) — integer schemas can emit z.int(), so use number types when the generated validator runs on Zod 3.
+- [Gemini model availability](gemini-model-availability.md) — a catalog-listed Gemini model may still be unavailable to a new API key; verify with a minimal generateContent call.
+- [Runtime esbuild packaging](runtime-esbuild-packaging.md) — keep esbuild external in server bundles and validate component names before minification.
+- [Vertex transient capacity](vertex-transient-capacity.md) — native PDF calls may transiently return 429 even after a text probe succeeds; retry boundedly without changing providers.
+- [Generated component completeness](generated-component-completeness.md) — complex generated JSX needs enough output budget and local compilation before supervision.
+- [Browser JSX evaluation](browser-jsx-evaluation.md) — Babel 8 browser evaluation needs import cleanup and classic JSX runtime to avoid duplicate hooks and require().

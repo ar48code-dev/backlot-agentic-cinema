@@ -1,0 +1,30 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "qPjuZmhoqZFTyCUFXtdCZ"
+uri = "file://test-assets/backlot-supervisor-test.pdf"
+type = "pdf"
+title = "Backlot supervisor test PDF"
+description = "Short script-like PDF used for the native Vertex grounding and end-to-end supervisor validation test."
+logical_id = "b6020373-9451-47cd-9564-b14195703568"
+content_hash = "sha256:075351d80226e6adecbe9c869ca85fdaf66607442b435a4b40c2c6f7eacc6fa4"
+size = 1071
+mtime_ms = 1788627962063
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:0171587b-a7bc-4519-86e0-dc878f4d1096/b6020373-9451-47cd-9564-b14195703568/d2c0c3c0-8b36-42f7-a958-e1811624e9a0"
+storage_version_token = "1788628221598060"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "6YBLveIRJSrb62jOzfKC-"
+uri = "file://backlot-github-submission.zip"
+type = "unspecified"
+title = "Backlot GitHub submission archive"
+description = "Clean project archive from the current committed main branch, including the MIT license, open-source README, Interactive win-overlay fix, and all application source."
+logical_id = "516a22ac-508a-4636-a3eb-91b72f3b8d9e"
+content_hash = "sha256:1af6e7d9ab2bcf3c8a145e7033a5404523da67ae893657e3680b9d91434169ad"
+size = 444747
+mtime_ms = 1788757681444
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:0171587b-a7bc-4519-86e0-dc878f4d1096/516a22ac-508a-4636-a3eb-91b72f3b8d9e/91774a29-9f97-4c3d-95b8-12d865598349"
+storage_version_token = "1788757690714617"
+content_type = "application/octet-stream"

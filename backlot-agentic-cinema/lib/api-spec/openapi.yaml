@@ -1,0 +1,381 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: tool-requests
+    description: AI-generated production tool specifications
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /tool-requests:
+    get:
+      operationId: listToolRequests
+      tags: [tool-requests]
+      summary: List past tool requests
+      responses:
+        "200":
+          description: Tool requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ToolRequest"
+    post:
+      operationId: createToolRequest
+      tags: [tool-requests]
+      summary: Interpret a production tool request with Gemini and persist it
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToolRequestInput"
+      responses:
+        "201":
+          description: Generated tool request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolRequest"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Generation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /tool-requests/ground:
+    post:
+      operationId: groundToolRequest
+      tags: [tool-requests]
+      summary: Extract production facts from a PDF using native Vertex AI document input
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PdfGroundingInput"
+      responses:
+        "201":
+          description: Grounded facts ready for producer review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolRequest"
+        "400":
+          description: Invalid PDF input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Grounding failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /tool-requests/{id}/spec:
+    post:
+      operationId: generateGroundedSpec
+      tags: [tool-requests]
+      summary: Generate a tool specification from producer-reviewed grounded facts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroundedSpecInput"
+      responses:
+        "200":
+          description: Grounded specification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolRequest"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Facts are not ready for review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Specification generation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /tool-requests/{id}/build:
+    post:
+      operationId: buildToolRequest
+      tags: [tool-requests]
+      summary: Generate and persist the working tool component for a reviewed spec
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Built tool request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolRequest"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Request is not ready to build
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Generation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /tool-requests/{id}/publish:
+    post:
+      operationId: publishToolRequest
+      tags: [tool-requests]
+      summary: Package and expose a built tool as a standalone application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Published tool request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolRequest"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Request is not built
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Packaging or publishing failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    ToolField:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+      required: [name, type, description]
+    ToolAction:
+      type: object
+      properties:
+        label:
+          type: string
+        description:
+          type: string
+      required: [label, description]
+    ToolSpec:
+      type: object
+      properties:
+        name:
+          type: string
+        mode:
+          type: string
+          enum: [production, interactive]
+        purpose:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolField"
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolAction"
+        initialData:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroundedRecord"
+        interactive:
+          anyOf:
+            - $ref: "#/components/schemas/InteractiveSpec"
+            - type: "null"
+      required: [name, mode, purpose, fields, actions, initialData, interactive]
+    InteractiveSpec:
+      type: object
+      properties:
+        mechanic:
+          type: string
+          enum: [match, branch]
+        entities:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroundedRecord"
+        winCondition:
+          type: string
+        instructions:
+          type: string
+      required: [mechanic, entities, winCondition, instructions]
+    GroundedRecord:
+      type: object
+      properties:
+        sourceType:
+          type: string
+        name:
+          type: string
+        details:
+          type: string
+      required: [sourceType, name, details]
+    GroundedFacts:
+      type: object
+      properties:
+        characters:
+          type: array
+          items: { type: string }
+        scenes:
+          type: array
+          items: { type: string }
+        props:
+          type: array
+          items: { type: string }
+        locations:
+          type: array
+          items: { type: string }
+        rightsMentions:
+          type: array
+          items: { type: string }
+      required: [characters, scenes, props, locations, rightsMentions]
+    ToolRequest:
+      type: object
+      properties:
+        id:
+          type: number
+        requestText:
+          type: string
+        spec:
+          anyOf:
+            - $ref: "#/components/schemas/ToolSpec"
+            - type: "null"
+        groundedFacts:
+          anyOf:
+            - $ref: "#/components/schemas/GroundedFacts"
+            - type: "null"
+        sourcePdfName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, facts-ready, spec-ready, validation-failed, built]
+        createdAt:
+          type: string
+        generatedCode:
+          type: ["string", "null"]
+        supervisorStatus:
+          type: ["string", "null"]
+          enum: [null, passed, failed]
+        supervisorReason:
+          type: ["string", "null"]
+        publishedUrl:
+          type: ["string", "null"]
+        publishedSlug:
+          type: ["string", "null"]
+      required: [id, requestText, spec, groundedFacts, sourcePdfName, status, createdAt, generatedCode, supervisorStatus, supervisorReason, publishedUrl, publishedSlug]
+    ToolRequestInput:
+      type: object
+      properties:
+        requestText:
+          type: string
+          minLength: 3
+      required: [requestText]
+    PdfGroundingInput:
+      type: object
+      properties:
+        requestText:
+          type: string
+          minLength: 3
+        pdfBase64:
+          type: string
+          minLength: 20
+        pdfName:
+          type: string
+          minLength: 1
+      required: [requestText, pdfBase64, pdfName]
+    GroundedSpecInput:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [production, interactive]
+      required: [mode]
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+

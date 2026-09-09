@@ -1,0 +1,38 @@
+Please implement the following, in this order, since later items depend on earlier ones:
+
+1. VERTEX AI MIGRATION
+   Replace the current direct generativelanguage.googleapis.com API key calls with 
+   Vertex AI's Gemini endpoint, using the existing GCP project credentials 
+   (service account or ADC — check what's already configured in this environment). 
+   Both the spec-generation call and the tool-code-generation call must go through 
+   Vertex AI, not the AI Studio key. Confirm both still work with a real test request 
+   after migration, and report the exact Vertex AI model endpoint used.
+
+2. DOCUMENT UPLOAD + GROUNDING AGENT
+   Add a document upload option (PDF) alongside the existing plain-text request field. 
+   When a PDF is uploaded, send it to Gemini as a real multimodal document input (not 
+   OCR-to-text preprocessing) and extract structured facts relevant to production 
+   tools: characters, scenes, props mentioned, locations, and any song/brand/rights 
+   mentions. Store this extracted data as a new `grounded_facts` JSON field on the 
+   tool_requests row. Show the extracted facts to the user for review before spec 
+   generation proceeds.
+
+3. SPEC AGENT UPGRADE
+   When grounded_facts exist for a request, the spec-generation call must use them to 
+   pre-populate the tool's field values (e.g. actual character/prop names from the 
+   document), not generate a generic blank-form spec. If no document was uploaded, 
+   fall back to the current plain-text behavior unchanged.
+
+4. BUILD SUPERVISOR AGENT
+   After tool-code generation but before a tool can be marked "built", add a validation 
+   pass: a separate Gemini call that checks the generated component against its own 
+   spec — confirming the fields and actions in the code actually match what the spec 
+   defined, and that any grounded facts (character/prop names) appear correctly. If 
+   validation fails, do not mark the tool as built — show the validation failure reason 
+   and allow retry. Log validation results (pass/fail + reasoning) on the tool_requests 
+   row.
+
+Test end to end with one new request that includes a real short sample PDF (a page or 
+two of script-like content is fine), and confirm: extracted facts are shown, the 
+generated tool reflects real data from the document, and the Build Supervisor's 
+validation result is visible and genuinely tied to that specific request's content.

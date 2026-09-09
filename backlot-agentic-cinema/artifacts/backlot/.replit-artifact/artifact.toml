@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Backlot"
+description = "An AI production assistant for film and television producers that turns plain-English needs into reviewed, structured internal tool specifications and keeps a history of requests."
+version = "1.0.0"
+id = "artifacts/backlot"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23000
+
+[services.development]
+run = "pnpm --filter @workspace/backlot run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/backlot", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/backlot/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23000"
+BASE_PATH = "/"
